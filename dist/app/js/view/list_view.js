@@ -1,4 +1,4 @@
-define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-list", "components/gaia-button/gaia-button"], function (exports, _componentsFxosMvcDistMvc, _componentsGaiaListGaiaList, _componentsGaiaButtonGaiaButton) {
+define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-list", "components/gaia-button/gaia-button", "js/lib/helpers"], function (exports, _componentsFxosMvcDistMvc, _componentsGaiaListGaiaList, _componentsGaiaButtonGaiaButton, _jsLibHelpers) {
   "use strict";
 
   var _extends = function (child, parent) {
@@ -14,6 +14,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
   };
 
   var View = _componentsFxosMvcDistMvc.View;
+  var IconHelper = _jsLibHelpers.IconHelper;
 
 
   function capitalize(string) {
@@ -32,21 +33,13 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
 
     _extends(ListView, View);
 
-    ListView.prototype.showAlertDialog = function (msg) {
-      if (!this.alertDialog) {
-        this.alertDialog = document.querySelector("#alert-dialog");
-      }
-      this.alertDialog.textContent = msg;
-      this.alertDialog.open();
-    };
-
     ListView.prototype.update = function (list) {
       for (var manifestURL in list) {
         var data = list[manifestURL];
         if (!this.elements[manifestURL]) {
           this.elements[manifestURL] = this.addElement(data);
         }
-        this.updateElements(this.elements[manifestURL], data);
+        this.updateElement(this.elements[manifestURL], data);
       }
     };
 
@@ -78,11 +71,15 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
 
     ListView.prototype.addElement = function (data) {
       var item = document.createElement("li");
-      item.className = "item";
+      item.classList.add("item", data.type);
       item.innerHTML = this.listItemTemplate(data);
+      IconHelper.setImage(item.querySelector(".icon"), data.icon);
       this.el.appendChild(item);
 
-      item.addEventListener("click", function (data) {
+      item.addEventListener("click", function (data, evt) {
+        if (evt.target.classList.contains("install-button")) {
+          return;
+        }
         this.detailsHandlers.forEach(function (handler) {
           handler(data);
         });
@@ -97,12 +94,13 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
       return item;
     };
 
-    ListView.prototype.updateElements = function (element, data) {
+    ListView.prototype.updateElement = function (element, data) {
+      element.classList.toggle("installed", data.installed);
       var button = element.querySelector(".install-button");
-      if (data.installed === true) {
-        button.textContent = "Launch";
-      } else {
-        button.textContent = "Install";
+      button.textContent = data.installed ? "Open" : "Install";
+      var icon = element.querySelector(".icon");
+      if (data.icon && icon.src !== data.icon) {
+        IconHelper.setImage(icon, data.icon);
       }
     };
 
@@ -117,7 +115,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
     ListView.prototype.listItemTemplate = function (_ref) {
       var name = _ref.name;
       var author = _ref.author;
-      var string = "\n      <img class=\"icon\" src=\"./img/app_icons/" + name + ".png\" />\n      <div flex class=\"description\">\n        <p class=\"name\">" + capitalize(name) + "</p>\n        <p class=\"author\">" + author + "</p>\n      </div>\n      <button class=\"install-button\">Loading...</button>";
+      var string = "\n      <img class=\"icon\" />\n      <div flex class=\"description\">\n        <p class=\"name\">" + capitalize(name) + "</p>\n        <p class=\"author\">" + author + "</p>\n      </div>\n      <span class=\"install-info\">Installed</span>\n      <gaia-button class=\"install-button\">Loading...</gaia-button>";
       return string;
     };
 

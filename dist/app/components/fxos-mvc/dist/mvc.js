@@ -1394,7 +1394,10 @@ define(["exports"], function (exports) {
       return this.el.querySelectorAll(selector);
     };
 
-    View.prototype.on = function (type, selector, handler) {
+    View.prototype.on = function (type, selector, handler, scope) {
+      var controller = this.controller;
+      scope = scope || this.el;
+
       if (!events[type]) {
         events[type] = [];
         window.addEventListener(type, delegateHandler, true);
@@ -1402,7 +1405,9 @@ define(["exports"], function (exports) {
 
       events[type].push({
         selector: selector,
-        handler: handler
+        handler: handler,
+        controller: controller,
+        scope: scope
       });
     };
 
@@ -1426,12 +1431,27 @@ define(["exports"], function (exports) {
   exports.View = View;
 
 
+  /**
+   * Forward an event based on the target's `[data-action]` attr to the controller.
+   * e.g. "click" on a `<button data-action="cancel">` goes to controller.cancel()
+   */
+  function handleAction(event, controller) {
+    var action = event.target.dataset.action;
+    if (controller && controller[action]) {
+      controller[action](event);
+    }
+  }
+
   function delegateHandler(event) {
     var target = event.target;
 
     events[event.type].forEach(function (delegate) {
-      if (target.matches(delegate.selector)) {
-        delegate.handler.call(target, event);
+      if (delegate.scope.contains(target) && target.matches(delegate.selector)) {
+        if (delegate.handler) {
+          delegate.handler.call(target, event);
+        } else {
+          handleAction(event, delegate.controller);
+        }
       }
     });
   }
@@ -1461,9 +1481,15 @@ define(["exports"], function (exports) {
   exports.Controller = Controller;
   var RoutingController = (function (Controller) {
     var RoutingController = function RoutingController(controllers) {
+      if (window.routingController) {
+        console.error("Document can only contain one RoutingController");
+        return;
+      }
+
       Controller.call(this);
-      this.controllers = controllers;
+      this._controllers = controllers;
       this.activeController = null;
+      window.routingController = this;
       window.addEventListener("hashchange", this.route.bind(this));
     };
 
@@ -1471,7 +1497,7 @@ define(["exports"], function (exports) {
 
     RoutingController.prototype.route = function () {
       var route = window.location.hash.slice(1);
-      var controller = this.controllers[route];
+      var controller = this._controllers[route];
       if (controller) {
         if (this.activeController) {
           this.activeController.teardown();
@@ -1480,6 +1506,10 @@ define(["exports"], function (exports) {
         this.activeController = controller;
         controller.main();
       }
+    };
+
+    RoutingController.prototype.controller = function (id) {
+      return this._controllers[id];
     };
 
     return RoutingController;

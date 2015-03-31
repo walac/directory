@@ -40,6 +40,11 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
       this.refreshInstalledList();
     };
 
+    ListController.prototype.showAlertDialog = function (msg) {
+      this.alertDialog.textContent = msg;
+      this.alertDialog.open();
+    };
+
     ListController.prototype.createListIfNeeded = function () {
       if (!this.alreadyCreated) {
         this.tabsView.render();
@@ -50,6 +55,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
         document.body.appendChild(this.addonView.el);
         this.detailsView.render();
         document.body.appendChild(this.detailsView.el);
+        this.alertDialog = document.querySelector("#alert-dialog");
 
         this.list = this.model.getAppList();
         this.appView.update(this.list);
@@ -60,6 +66,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
         this.addonView.onDetails(this.handleDetails.bind(this));
         this.appView.activate();
         this.detailsView.onClose(this.handleCloseDetails.bind(this));
+        this.detailsView.onInstall(this.handleInstall.bind(this));
 
         this.alreadyCreated = true;
       }
@@ -87,13 +94,17 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
         for (var manifestURL in _this.list) {
           _this.list[manifestURL].installed = !!installedApps[manifestURL];
           _this.list[manifestURL].mozApp = installedApps[manifestURL] || false;
+          if (_this.detailsView.isShowing(manifestURL)) {
+            // If it's showing, repopulate the details view with new app data.
+            _this.detailsView.show(_this.list[manifestURL]);
+          }
         }
         _this.appView.update(_this.list);
         _this.addonView.update(_this.list);
       };
 
       req.onerror = function (e) {
-        _this.appView.showAlertDialog("error fetching install apps: " + e.message);
+        _this.showAlertDialog("error fetching install apps: " + e.message);
         console.log("error fetching installed apps: ", e);
       };
     };
@@ -111,7 +122,10 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
     ListController.prototype.handleInstall = function (data) {
       var manifestURL = data.manifestURL;
       if (this.list[manifestURL].mozApp) {
-        this.list[manifestURL].mozApp.launch();
+        // Addons cannot be launched so do nothing on button click.
+        if (data.type !== "addon") {
+          this.list[manifestURL].mozApp.launch();
+        }
       } else {
         this.install(data);
       }
@@ -152,9 +166,22 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
       }
 
       installReq.onerror = function (err) {
-        _this2.appView.showAlertDialog("Error installing: " + err.target.error.name);
-        console.log("install error", err);
+        var errorType = err.target.error.name;
+        switch (errorType) {
+          case "DENIED":
+            // If the user cancelled the install, we do nothing.
+            break;
+
+          case "NETWORK_ERROR":
+            _this2.showAlertDialog("Install Error: No network");
+            break;
+
+          default:
+            _this2.showAlertDialog("Error installing: " + err.target.error.name);
+            break;
+        }
       };
+
       installReq.onsuccess = function () {
         _this2.refreshInstalledList();
       };

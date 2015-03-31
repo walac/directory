@@ -46,7 +46,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-tabs/gaia-ta
     };
 
     TabsView.prototype.template = function () {
-      var string = "\n      <gaia-tabs>\n        <a select>Apps</a>\n        <a>Add-Ons</a>\n      </gaia-tabs>";
+      var string = "\n      <gaia-tabs>\n        <a class=\"selected\">Apps</a>\n        <a>Add-Ons</a>\n      </gaia-tabs>";
       return string;
     };
 

@@ -68,9 +68,12 @@ module.exports = component.register('gaia-button', {
     :host {
       display: block;
       box-sizing: border-box;
+      height: 50px;
       min-width: 50%;
       margin: var(--base-m, 18px);
       outline: 0;
+      font-style: italic;
+      font-size: 17px;
     }
 
     @media(min-width:500px) {
@@ -82,12 +85,17 @@ module.exports = component.register('gaia-button', {
       min-width: 0;
     }
 
+    :host([disabled]) {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
     /** Inner
      ---------------------------------------------------------*/
 
     .inner {
       position: relative;
-      height: 50px;
+      height: 100%;
       border-radius: 50px;
       overflow: hidden;
       cursor: pointer;
@@ -118,15 +126,6 @@ module.exports = component.register('gaia-button', {
 
     .inner[circular] {
       border-radius: 50%;
-    }
-
-    /**
-     * [disabled]
-     */
-
-    .inner[disabled] {
-      pointer-events: none;
-      opacity: 0.5;
     }
 
     /**
@@ -203,8 +202,6 @@ module.exports = component.register('gaia-button', {
       z-index: 2;
       height: 100%;
       padding: 0 18px;
-      font-style: italic;
-      font-size: 17px;
       pointer-events: none; /* 1 */
     }
 
