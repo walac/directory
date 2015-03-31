@@ -1,17 +1,32 @@
 body {
   margin: 0;
-  font-size: 10px;
+  font-size: 17px;
   font-family: "FiraSans";
   overflow-x: hidden;
+  background-color: var(--background);
+  color: var(--title-color);
 }
 
 body.loading {
   background: url(../img/gears.svg) 50% 50%;
 }
 
+gaia-header {
+  --header-icon-color: var(--title-color);
+}
+
 gaia-header #upload-link {
-  background: url(../img/upload.svg) no-repeat 50% 50% / 38px !important;
-  filter: invert(100%);
+  background: url(../img/upload.svg) no-repeat 50% 50% / 32px !important;
+  filter: invert(55%);
+}
+
+#tabs-container {
+  --border-color: transparent;
+  border-bottom: 1px solid #e7e7e7 !important;
+}
+
+#tabs-container a {
+  font-weight: normal !important;
 }
 
 .install-list {
@@ -23,33 +38,22 @@ gaia-header #upload-link {
   height: 66px;
 }
 
-.install-list > .item::before {
-  display: none !important;
-}
-
-.install-list > .item:nth-child(even) {
-  background-color: #eaeaea !important;
-}
-
 .install-list .icon {
   max-height: 100%;
   float: left;
   margin-right: 13px;
 }
 
-.install-list .description {
-  color: black !important;
-}
-
 .install-list .name {
-  font-size: 19px !important;
   margin: 0;
+  font-size: 19px !important;
+  color: var(--text-color);
 }
 
 .author {
-  font-size: 15px !important;
   margin: 0 0 0 2px;
-  color: #545454 !important;
+  font-size: 15px !important;
+  color: var(--title-color);
 }
 
 .install-list {
@@ -57,14 +61,38 @@ gaia-header #upload-link {
 }
 
 .install-list .install-button {
-  float: right;
-  color: rgba(0, 0, 0, 0.53);
-  background: none;
-  font-size: 15px;
+  font-size: 12px !important;
+  font-weight: bold !important;
+  height: 32px !important;
+  min-width: 70px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  --button-color: var(--title-color);
+  -moz-user-select: none;
+}
+
+.install-list .addon.installed .install-button {
+  display: none !important;
+}
+
+.install-list .item:not(.installed) .install-button {
+  --button-background: var(--color-blue);
+  --button-box-shadow: none;
+  --button-color: white;
+  --button-background-active: white;
+  --button-box-shadow-active: none;
+  --button-color-active: var(--title-color);
+}
+
+.install-list .install-info {
+  font-size: 14px;
   font-style: italic;
-  border: 2px solid rgba(0, 0, 0, 0.12);
-  min-width: 73px;
-  border-radius: 10px;
+  color: var(--title-color);
+  display: none;
+}
+
+.install-list .addon.installed .install-info {
+  display: inline;
 }
 
 #app-list {
@@ -80,16 +108,31 @@ gaia-header #upload-link {
   transform: translateX(0);
 }
 
-#add-details {
-  position: fixed:
-  height: 100%;
-  width: 100%;
+#app-details {
+  position: fixed;
   top: 0;
+  bottom: 0;
   left: 0;
+  right: 0;
+  z-index: 2;
+  background-color: var(--background);
+  color: var(--text-color);
+  --header-icon-color: var(--text-color);
   transition: transform 0.2s ease;
-  transform: translatxY(100%);
+  transform: translateY(100%);
 }
 
 #app-details.active {
   transform: translateY(0);
+}
+
+#app-details #info-section {
+  position: relative !important;
+}
+
+#app-details #full-description,
+#app-details #affected-apps {
+  font-size: 15px;
+  line-height: 20px;
+  padding: 2px 16px;
 }

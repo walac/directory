@@ -1,6 +1,7 @@
 import { View } from 'components/fxos-mvc/dist/mvc';
 import 'components/gaia-list/gaia-list';
 import 'components/gaia-button/gaia-button';
+import { IconHelper } from 'js/lib/helpers';
 
 function capitalize(string) {
   return string[0].toUpperCase() + string.slice(1);
@@ -16,21 +17,13 @@ export default class ListView extends View {
     this.detailsHandlers = [];
   }
 
-  showAlertDialog(msg) {
-    if (!this.alertDialog) {
-      this.alertDialog = document.querySelector('#alert-dialog');
-    }
-    this.alertDialog.textContent = msg;
-    this.alertDialog.open();
-  }
-
   update(list) {
     for (let manifestURL in list) {
       let data = list[manifestURL];
       if (!this.elements[manifestURL]) {
         this.elements[manifestURL] = this.addElement(data);
       }
-      this.updateElements(this.elements[manifestURL], data);
+      this.updateElement(this.elements[manifestURL], data);
     }
   }
 
@@ -62,11 +55,15 @@ export default class ListView extends View {
 
   addElement(data) {
     var item = document.createElement('li');
-    item.className = 'item';
+    item.classList.add('item', data.type);
     item.innerHTML = this.listItemTemplate(data);
+    IconHelper.setImage(item.querySelector('.icon'), data.icon);
     this.el.appendChild(item);
 
-    item.addEventListener('click', function(data) {
+    item.addEventListener('click', function(data, evt) {
+      if (evt.target.classList.contains('install-button')) {
+        return;
+      }
       this.detailsHandlers.forEach(handler => {
         handler(data);
       });
@@ -82,12 +79,13 @@ export default class ListView extends View {
     return item;
   }
 
-  updateElements(element, data) {
+  updateElement(element, data) {
+    element.classList.toggle('installed', data.installed);
     var button = element.querySelector('.install-button');
-    if (data.installed === true) {
-      button.textContent = 'Launch';
-    } else {
-      button.textContent = 'Install';
+    button.textContent = data.installed ? 'Open' : 'Install';
+    var icon = element.querySelector('.icon');
+    if (data.icon && icon.src !== data.icon) {
+      IconHelper.setImage(icon, data.icon);
     }
   }
 
@@ -101,12 +99,13 @@ export default class ListView extends View {
 
   listItemTemplate({ name, author }) {
     var string = `
-      <img class="icon" src="./img/app_icons/${name}.png" />
+      <img class="icon" />
       <div flex class="description">
         <p class="name">${capitalize(name)}</p>
         <p class="author">${author}</p>
       </div>
-      <button class="install-button">Loading...</button>`;
+      <span class="install-info">Installed</span>
+      <gaia-button class="install-button">Loading...</gaia-button>`;
     return string;
   }
 

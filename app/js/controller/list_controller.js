@@ -26,6 +26,11 @@ export default class ListController extends Controller {
     this.refreshInstalledList();
   }
 
+  showAlertDialog(msg) {
+    this.alertDialog.textContent = msg;
+    this.alertDialog.open();
+  }
+
   createListIfNeeded() {
     if (!this.alreadyCreated) {
       this.tabsView.render();
@@ -36,6 +41,7 @@ export default class ListController extends Controller {
       document.body.appendChild(this.addonView.el);
       this.detailsView.render();
       document.body.appendChild(this.detailsView.el);
+      this.alertDialog = document.querySelector('#alert-dialog');
 
       this.list = this.model.getAppList();
       this.appView.update(this.list);
@@ -46,6 +52,7 @@ export default class ListController extends Controller {
       this.addonView.onDetails(this.handleDetails.bind(this));
       this.appView.activate();
       this.detailsView.onClose(this.handleCloseDetails.bind(this));
+      this.detailsView.onInstall(this.handleInstall.bind(this));
 
       this.alreadyCreated = true;
     }
@@ -72,13 +79,17 @@ export default class ListController extends Controller {
       for (let manifestURL in this.list) {
         this.list[manifestURL].installed = !!installedApps[manifestURL];
         this.list[manifestURL].mozApp = installedApps[manifestURL] || false;
+        if (this.detailsView.isShowing(manifestURL)) {
+          // If it's showing, repopulate the details view with new app data.
+          this.detailsView.show(this.list[manifestURL]);
+        }
       }
       this.appView.update(this.list);
       this.addonView.update(this.list);
     };
 
     req.onerror = e => {
-      this.appView.showAlertDialog('error fetching install apps: ' + e.message);
+      this.showAlertDialog('error fetching install apps: ' + e.message);
       console.log('error fetching installed apps: ', e);
     };
   }
@@ -96,7 +107,10 @@ export default class ListController extends Controller {
   handleInstall(data) {
     var manifestURL = data.manifestURL;
     if (this.list[manifestURL].mozApp) {
-      this.list[manifestURL].mozApp.launch();
+      // Addons cannot be launched so do nothing on button click.
+      if (data.type !== 'addon') {
+        this.list[manifestURL].mozApp.launch();
+      }
     } else {
       this.install(data);
     }
@@ -136,9 +150,22 @@ export default class ListController extends Controller {
     }
 
     installReq.onerror = (err) => {
-      this.appView.showAlertDialog('Error installing: ' + err.target.error.name);
-      console.log('install error', err);
+      var errorType = err.target.error.name;
+      switch(errorType) {
+        case 'DENIED':
+          // If the user cancelled the install, we do nothing.
+          break;
+
+        case 'NETWORK_ERROR':
+          this.showAlertDialog('Install Error: No network');
+          break;
+
+        default:
+          this.showAlertDialog('Error installing: ' + err.target.error.name);
+          break;
+      }
     };
+
     installReq.onsuccess = () => {
       this.refreshInstalledList();
     };
